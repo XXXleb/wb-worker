@@ -1,0 +1,12 @@
+﻿################################################################################
+# This .gitignore file was automatically created by Microsoft(R) Visual Studio.
+################################################################################
+
+/.vs
+/WbWorker/obj
+/WbWorker/bin/Debug/net6.0
+/WbWorker.Domain/obj
+/WbWorker.Domain/bin/Debug/net6.0
+/WbWorker.Infrastructure/obj/Debug/net6.0
+/WbWorker.Infrastructure/bin/Debug/net6.0
+/WbWorker.Infrastructure/obj

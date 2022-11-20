@@ -1,5 +1,4 @@
 using RestSharp;
-using System;
 using System.Data;
 using System.Text.Json;
 using WbWorker.Domain.Settings.Models;
@@ -57,13 +56,15 @@ public class Worker : BackgroundService
 			return;
 		}
 
+		_logger.LogInformation($"Processing: marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}, dateFrom={dateFrom}, url={url}");
+
 		string errorText = string.Empty;
 
 		(string resultJson, bool success) = await CallExternalAsync(url);
 
 		if (!success)
 		{
-			errorText = $"Error by URL = {url}";
+			errorText = $"Error by URL = {url}; ErrorInfo = {resultJson}";
 			_logger.LogError(errorText);
 		}
 
@@ -84,6 +85,8 @@ public class Worker : BackgroundService
 		}
 
 		await _wbClient.ApiCallLogAdd(apiSetting.MarketplaceId, apiType.Id, dateFrom, url, errorText, schedule.Id);
+
+		_logger.LogInformation($"Finish processing: marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}, dateFrom={dateFrom}, url={url}");
 	}
 
 	private async Task ProcessToDb(byte marketplaceId, DateTime dateFrom, ApiType apiType, string resultJson)
@@ -150,7 +153,7 @@ public class Worker : BackgroundService
 			dr["RealizationreportId"] = i.RealizationreportId;
 			dr["DateFrom"] = i.DateFrom;
 			dr["DateTo"] = i.DateTo;
-			dr["CreateDt"] = i.CreateDt;
+			dr["CreateDt"] = i.CreateDt is null ? DBNull.Value : i.CreateDt;
 			dr["SuppliercontractCode"] = i.SuppliercontractCode;
 			dr["RrdId"] = i.RrdId;
 			dr["GiId"] = i.GiId;
@@ -382,7 +385,7 @@ public class Worker : BackgroundService
 					new DataColumn { ColumnName = "Barcode", DataType = typeof(string) },
 					new DataColumn { ColumnName = "DocTypeName", DataType = typeof(string) },
 					new DataColumn { ColumnName = "Quantity", DataType = typeof(int) },
-					new DataColumn { ColumnName = "RetailPric", DataType = typeof(decimal) },
+					new DataColumn { ColumnName = "RetailPrice", DataType = typeof(decimal) },
 					new DataColumn { ColumnName = "RetailAmount", DataType = typeof(decimal) },
 					new DataColumn { ColumnName = "SalePercent", DataType = typeof(decimal) },
 					new DataColumn { ColumnName = "CommissionPercent", DataType = typeof(decimal) },
@@ -472,13 +475,13 @@ public class Worker : BackgroundService
 					new DataColumn { ColumnName = "TechSize", DataType = typeof(string) },
 					new DataColumn { ColumnName = "Barcode", DataType = typeof(string) },
 					new DataColumn { ColumnName = "TotalPrice", DataType = typeof(decimal) },
-					new DataColumn { ColumnName = "DiscountPercent", DataType = typeof(bool) },
+					new DataColumn { ColumnName = "DiscountPercent", DataType = typeof(decimal) },
 					new DataColumn { ColumnName = "WarehouseName", DataType = typeof(string) },
-					new DataColumn { ColumnName = "Oblast", DataType = typeof(int) },
-					new DataColumn { ColumnName = "IncomeId", DataType = typeof(int) },
-					new DataColumn { ColumnName = "OdId", DataType = typeof(int) },
-					new DataColumn { ColumnName = "NmId", DataType = typeof(string) },
-					new DataColumn { ColumnName = "Subject", DataType = typeof(int) },
+					new DataColumn { ColumnName = "Oblast", DataType = typeof(string) },
+					new DataColumn { ColumnName = "IncomeId", DataType = typeof(long) },
+					new DataColumn { ColumnName = "OdId", DataType = typeof(long) },
+					new DataColumn { ColumnName = "NmId", DataType = typeof(long) },
+					new DataColumn { ColumnName = "Subject", DataType = typeof(string) },
 					new DataColumn { ColumnName = "Category", DataType = typeof(string) },
 					new DataColumn { ColumnName = "Brand", DataType = typeof(string) },
 					new DataColumn { ColumnName = "IsCancel", DataType = typeof(bool) },

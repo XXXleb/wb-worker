@@ -47,7 +47,7 @@ public class Sale
     public string? RegionName { get; set; }
 
     [JsonPropertyName("incomeID")]
-    public int IncomeId { get; set; }
+    public long? IncomeId { get; set; }
 
     [JsonPropertyName("saleID")]
     public string? SaleId { get; set; }

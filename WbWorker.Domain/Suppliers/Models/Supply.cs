@@ -5,7 +5,7 @@ namespace WbWorker.Domain.Suppliers.Models;
 public class Supply
 {
     [JsonPropertyName("incomeId")]
-    public int IncomeId { get; set; }
+    public long? IncomeId { get; set; }
 
     [JsonPropertyName("number")]
     public string? Number { get; set; }

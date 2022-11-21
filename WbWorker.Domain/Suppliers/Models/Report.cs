@@ -29,7 +29,7 @@ public class Report
     public string? SubjectName { get; set; }
 
     [JsonPropertyName("nm_id")]
-    public long NmId { get; set; }
+    public long? NmId { get; set; }
 
     [JsonPropertyName("brand_name")]
     public string? BrandName { get; set; }

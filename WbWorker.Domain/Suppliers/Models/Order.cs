@@ -32,7 +32,7 @@ public class Order
     public string? Oblast { get; set; }
 
     [JsonPropertyName("incomeID")]
-    public long IncomeId { get; set; }
+    public long? IncomeId { get; set; }
 
     [JsonPropertyName("odid")]
     public long OdId { get; set; }

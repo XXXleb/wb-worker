@@ -10,3 +10,7 @@
 /WbWorker.Infrastructure/obj/Debug/net6.0
 /WbWorker.Infrastructure/bin/Debug/net6.0
 /WbWorker.Infrastructure/obj
+/WbWorker/bin/Release/net6.0
+/WbWorker/Properties/PublishProfiles
+/WbWorker.Domain/bin/Release/net6.0
+/WbWorker.Infrastructure/bin/Release/net6.0

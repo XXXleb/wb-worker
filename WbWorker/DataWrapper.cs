@@ -8,9 +8,10 @@ public static class DataWrapper
 {
 	public static DataTable ExciseDataGet(string json)
 	{
-		List<Excise> excises = JsonSerializer.Deserialize<List<Excise>>(json);
+		Excise[] excises = JsonSerializer.Deserialize<Excise[]>(json);
 
 		DataTable dt = DefineExciseDataTable("ExciseCall");
+
 		foreach (var i in excises)
 		{
 			var dr = dt.NewRow();
@@ -33,10 +34,10 @@ public static class DataWrapper
 
 	public static (DataTable, long) ReportDataGet(string json, int limit)
 	{
-		List<Report> reports = JsonSerializer.Deserialize<List<Report>>(json);
+		Report[] reports = JsonSerializer.Deserialize<Report[]>(json);
 		long lastId = 0;
 
-		if (reports.Count == limit)
+		if (reports.Length == limit)
 		{
 			lastId = reports.Max(m => m.RrdId);
 		}
@@ -110,7 +111,7 @@ public static class DataWrapper
 
 	public static DataTable SaleDataGet(string json)
 	{
-		List<Sale> sales = JsonSerializer.Deserialize<List<Sale>>(json);
+		Sale[] sales = JsonSerializer.Deserialize<Sale[]>(json);
 
 		DataTable dt = DefineSaleDataTable("SaleLog");
 		foreach (var i in sales)
@@ -154,7 +155,7 @@ public static class DataWrapper
 
 	public static DataTable OrderDataGet(string json)
 	{
-		List<Order> orders = JsonSerializer.Deserialize<List<Order>>(json);
+		Order[] orders = JsonSerializer.Deserialize<Order[]>(json);
 
 		DataTable dt = DefineOrderDataTable("OrderLog");
 		foreach (var i in orders)
@@ -189,7 +190,7 @@ public static class DataWrapper
 
 	public static DataTable StockDataGet(string json)
 	{
-		List<Stock> stocks = JsonSerializer.Deserialize<List<Stock>>(json);
+		Stock[] stocks = JsonSerializer.Deserialize<Stock[]>(json);
 
 		DataTable dt = DefineStockDataTable("StockLog");
 		foreach (var stock in stocks)
@@ -226,7 +227,7 @@ public static class DataWrapper
 
 	public static DataTable SupplyDataGet(string json)
 	{
-		List<Supply> supplies = JsonSerializer.Deserialize<List<Supply>>(json);
+		Supply[] supplies = JsonSerializer.Deserialize<Supply[]>(json);
 
 		DataTable dt = DefineSupplyDataTable("SupplyCall");
 		foreach (var supply in supplies)

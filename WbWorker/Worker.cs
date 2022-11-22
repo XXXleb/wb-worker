@@ -1,4 +1,5 @@
 using System.Data;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using WbWorker.Domain.Settings.Models;
 using WbWorker.Domain.Wb;
@@ -41,7 +42,6 @@ public class Worker : BackgroundService
 				foreach (var schedule in apiType.ApiTypeSchedules)
 				{
 					await InternalProcess(apiSetting, apiType, schedule, cancellationToken);
-					await Task.Delay(1000);
 				}
 			}
 		}
@@ -52,7 +52,7 @@ public class Worker : BackgroundService
 		if (DateTime.Now.TimeOfDay < schedule.Time)
 		{
 			_logger.LogInformation($"Too early for processing marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}");
-		
+
 			return;
 		}
 
@@ -65,7 +65,7 @@ public class Worker : BackgroundService
 		}
 
 		string errorText = string.Empty;
-		
+
 		int limit = 0;
 		if (apiType.Id == 5 /*Report*/)
 		{
@@ -80,10 +80,11 @@ public class Worker : BackgroundService
 			{
 				_logger.LogInformation($"Processing: marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}, dateFrom={dateFrom}, url={url}");
 
-				string resultJson = await CallExternalAsync(url, cancellationToken);
-				resultJson = string.IsNullOrWhiteSpace(resultJson) || resultJson == "null" ? "[]" : resultJson;
+				string result = await CallExternalAsync(url, cancellationToken);
 
-				lastId = await ProcessToDb(apiSetting.MarketplaceId, dateFrom, apiType, resultJson, limit);
+				result = string.IsNullOrWhiteSpace(result) || result == "null" ? "[]" : result;
+
+				lastId = await ProcessToDb(apiSetting.MarketplaceId, dateFrom, apiType, result, limit);
 
 				if (lastId == 0)
 				{
@@ -93,6 +94,7 @@ public class Worker : BackgroundService
 				{
 					url = url.Replace($"rrdId={prevId}", $"rrdId={lastId}");
 					prevId = lastId;
+					await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
 				}
 			}
 		}
@@ -144,12 +146,16 @@ public class Worker : BackgroundService
 
 	private async Task<string> CallExternalAsync(string url, CancellationToken cancellationToken)
 	{
-		using HttpClient client = new();
-		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-		client.DefaultRequestHeaders.Add("Connection", "keep-alive");
-		client.Timeout = TimeSpan.FromMinutes(30);
+		using HttpClient httpClient = new(new HttpClientHandler() { UseProxy = false });
+		httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+		httpClient.DefaultRequestHeaders.Add("Connection", "close");
+		httpClient.Timeout = TimeSpan.FromMinutes(30);
 
-		var result = await client.GetStringAsync(url, cancellationToken);
+		HttpResponseMessage response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+
+		response.EnsureSuccessStatusCode();
+
+		string result = await response.Content.ReadAsStringAsync(cancellationToken);
 
 		return result;
 	}

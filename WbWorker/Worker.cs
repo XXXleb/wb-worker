@@ -56,9 +56,9 @@ public class Worker : BackgroundService
 			return;
 		}
 
-		(bool isProcessed, string url, DateTime dateFrom) = await IsProcessed(apiSetting, apiType);
+		(long? lastId, string url, DateTime dateFrom) = await IsProcessed(apiSetting, apiType);
 
-		if (isProcessed)
+		if (lastId >= 0)
 		{
 			_logger.LogInformation($"Already processed marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}, dateFrom={dateFrom}, url={url}");
 			return;
@@ -72,7 +72,7 @@ public class Worker : BackgroundService
 			int.TryParse(apiType.ApiTypeParams.FirstOrDefault(t => t.Name == "limit")?.Value, out limit);
 		}
 
-		long lastId = 0;
+		lastId = 0;
 		long prevId = 0;
 		try
 		{
@@ -93,7 +93,7 @@ public class Worker : BackgroundService
 				else
 				{
 					url = url.Replace($"rrdId={prevId}", $"rrdId={lastId}");
-					prevId = lastId;
+					prevId = lastId.Value;
 					await Task.Delay(TimeSpan.FromMinutes(1), cancellationToken);
 				}
 			}
@@ -101,11 +101,12 @@ public class Worker : BackgroundService
 		catch (Exception ex)
 		{
 			errorText = ex.Message + ";\n" + ex.StackTrace;
+			lastId = null;
 
 			_logger.LogError(errorText);
 		}
 
-		await _wbClient.ApiCallLogAdd(apiSetting.MarketplaceId, apiType.Id, dateFrom, url, errorText, schedule.Id);
+		await _wbClient.ApiCallLogAdd(apiSetting.MarketplaceId, apiType.Id, dateFrom, url, errorText, schedule.Id, lastId);
 
 		_logger.LogInformation($"Finish processing: marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}, dateFrom={dateFrom}, url={url}");
 	}
@@ -144,14 +145,28 @@ public class Worker : BackgroundService
 		return lastId;
 	}
 
+	/*private async Task<string> CallExternalAsync(string url, CancellationToken cancellationToken)
+	{
+		using HttpClient client = new();
+		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+		client.DefaultRequestHeaders.Add("Connection", "keep-alive");
+		client.Timeout = TimeSpan.FromMinutes(30);
+
+		var result = await client.GetStringAsync(url, cancellationToken);
+
+		return result;
+	}*/
+
 	private async Task<string> CallExternalAsync(string url, CancellationToken cancellationToken)
 	{
 		using HttpClient httpClient = new(new HttpClientHandler() { UseProxy = false });
 		httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-		httpClient.DefaultRequestHeaders.Add("Connection", "close");
+		//httpClient.DefaultRequestHeaders.Add("Connection", "close");
 		httpClient.Timeout = TimeSpan.FromMinutes(30);
 
-		HttpResponseMessage response = await httpClient.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+		HttpRequestMessage httpRequest = new(HttpMethod.Get, url);
+
+		using HttpResponseMessage response = await httpClient.SendAsync(httpRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
 		response.EnsureSuccessStatusCode();
 
@@ -160,7 +175,7 @@ public class Worker : BackgroundService
 		return result;
 	}
 
-	private async Task<(bool, string, DateTime)> IsProcessed(ApiSetting apiSetting, ApiType apiType)
+	private async Task<(long?, string, DateTime)> IsProcessed(ApiSetting apiSetting, ApiType apiType)
 	{
 		var apiParams = apiType.ApiTypeParams.Select(p => ReplaceValues(p.Name, p.Value, apiSetting.ApiKey));
 		var @params = string.Join("&", apiParams);

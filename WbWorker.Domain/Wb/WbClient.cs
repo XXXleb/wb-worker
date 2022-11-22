@@ -14,7 +14,7 @@ public class WbClient
 		_db = db;
 	}
 
-	public async Task<bool> ApiCallLogGet(byte marketplaceId, byte apiTypeId, DateTime date)
+	public async Task<long?> ApiCallLogGet(byte marketplaceId, byte apiTypeId, DateTime date)
 	{
 		SqlParameter[] sqlParameters = new[] {
 				new SqlParameter("MarketplaceId", marketplaceId),
@@ -24,7 +24,7 @@ public class WbClient
 
 		using var ds = await _db.ExecProcedure("wb.ApiCallLog_Get", sqlParameters);
 
-		var result = ds.Tables[0].AsEnumerable().Select(r => r.Field<bool>("Result")).FirstOrDefault();
+		var result = ds.Tables[0].AsEnumerable().Select(r => r.Field<long?>("LastId")).FirstOrDefault();
 
 		return result;
 	}
@@ -95,7 +95,7 @@ public class WbClient
 		await _db.ExecProcedure("wb.Excise_Add", sqlParameters);
 	}
 
-	public async Task ApiCallLogAdd(byte marketplaceId, byte apiTypeId, DateTime dateFrom, string url, string errorText, int apiTypeScheduleId)
+	public async Task ApiCallLogAdd(byte marketplaceId, byte apiTypeId, DateTime dateFrom, string url, string errorText, int apiTypeScheduleId, long? lastId)
 	{
 		SqlParameter[] sqlParameters = new[] {
 				new SqlParameter("MarketplaceId", marketplaceId),
@@ -104,6 +104,7 @@ public class WbClient
 				new SqlParameter("Url", url),
 				new SqlParameter("ErrorText", errorText),
 				new SqlParameter("ApiTypeScheduleId", apiTypeScheduleId),
+				new SqlParameter("LastId", lastId)
 			};
 
 		await _db.ExecProcedure("wb.ApiCallLog_Add", sqlParameters);

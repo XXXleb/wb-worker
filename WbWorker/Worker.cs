@@ -145,23 +145,10 @@ public class Worker : BackgroundService
 		return lastId;
 	}
 
-	/*private async Task<string> CallExternalAsync(string url, CancellationToken cancellationToken)
-	{
-		using HttpClient client = new();
-		client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-		client.DefaultRequestHeaders.Add("Connection", "keep-alive");
-		client.Timeout = TimeSpan.FromMinutes(30);
-
-		var result = await client.GetStringAsync(url, cancellationToken);
-
-		return result;
-	}*/
-
 	private async Task<string> CallExternalAsync(string url, CancellationToken cancellationToken)
 	{
 		using HttpClient httpClient = new(new HttpClientHandler() { UseProxy = false });
 		httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-		//httpClient.DefaultRequestHeaders.Add("Connection", "close");
 		httpClient.Timeout = TimeSpan.FromMinutes(30);
 
 		HttpRequestMessage httpRequest = new(HttpMethod.Get, url);

@@ -52,13 +52,13 @@ public class Worker : BackgroundService
 		if (DateTime.Now.TimeOfDay < schedule.Time)
 		{
 			_logger.LogInformation($"Too early for processing marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}");
-
+		
 			return;
 		}
 
 		(long? lastId, string url, DateTime dateFrom) = await IsProcessed(apiSetting, apiType);
 
-		if (lastId >= 0)
+		if (lastId == 0)
 		{
 			_logger.LogInformation($"Already processed marketplaceId={apiSetting.MarketplaceId}, apiTypeId={apiType.Id}, dateFrom={dateFrom}, url={url}");
 			return;
@@ -72,8 +72,7 @@ public class Worker : BackgroundService
 			int.TryParse(apiType.ApiTypeParams.FirstOrDefault(t => t.Name == "limit")?.Value, out limit);
 		}
 
-		lastId = 0;
-		long prevId = 0;
+		long prevId = lastId > 0 ? lastId.Value : 0;
 		try
 		{
 			while (true)
@@ -170,7 +169,14 @@ public class Worker : BackgroundService
 
 		var dateFrom = DateTime.Parse(apiParams.Where(rp => rp.StartsWith("dateFrom=")).Select(rps => rps.Replace("dateFrom=", "")).First());
 
-		return (await _wbClient.ApiCallLogGet(apiSetting.MarketplaceId, apiType.Id, dateFrom), url, dateFrom);
+		long? lastId = await _wbClient.ApiCallLogGet(apiSetting.MarketplaceId, apiType.Id, dateFrom);
+
+		if (lastId > 0)
+		{
+			url = url.Replace($"rrdId=0", $"rrdId={lastId}");
+		}
+		
+		return (lastId, url, dateFrom);
 	}
 
 	private string ReplaceValues(string param, string val, string apiKey)
